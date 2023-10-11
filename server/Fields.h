@@ -1,224 +1,104 @@
-#include <vector>
+#ifndef PEPENGU_FIELDS_H
+#define PEPENGU_FIELDS_H
 #include <string>
 #include <cstring>
 
 namespace DB{
     class Field{
+    protected:
+        char* name;
     
     public:
-        virtual std::string getValue() const = 0;
+        Field(): name(nullptr){}
+        Field(const char* str): name(strcpy(new char[strlen(str)+1], str)){}
+        Field(const std::string &str): name(strcpy(new char[str.size()+1], str.c_str())){}
+
+        ~Field(){
+            delete name;
+        }
+
+        virtual inline std::string getValue() const = 0;
+        inline std::string getName(){return std::string(name);}
     };
 
 
-    //Integer type fields
-    class ByteIntField : Field{
-        int8_t value;
+    template<typename T>
+    class NumberField : public Field{
+        T value;
 
-        ByteIntField(): value(0){}
-        ByteIntField(int8_t val): value(val){}
-
-        ByteIntField(const ByteIntField &other): value(other.value){}
-        ByteIntField(ByteIntField &&other){
+        void swap(NumberField<T> &other){
+            std::swap(name, other.name);
             std::swap(value, other.value);
         }
 
     public:
-        std::string getValue() const{
+        NumberField(const char* str): Field(str), value(0){}
+        NumberField(const std::string &str): Field(str), value(0){}
+        
+        NumberField(const char* str, T val): Field(str), value(val){}
+        NumberField(const std::string &str, T val): Field(str), value(val){}
+
+        NumberField(const NumberField &other): Field(other.name), value(other.value){}
+        NumberField(NumberField &&other) noexcept{swap(other);}
+
+        inline std::string getValue() const{
             return std::to_string(value);
         }
     };
 
-    class ShortIntField : Field{
-        int16_t value;
-
-        ShortIntField(): value(0){}
-        ShortIntField(int16_t val): value(val){}
-
-        ShortIntField(const ShortIntField &other): value(other.value){}
-        ShortIntField(ShortIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class IntField : Field{
-        int32_t value;
-
-        IntField(): value(0){}
-        IntField(int32_t val): value(val){}
-
-        IntField(const IntField &other): value(other.value){}
-        IntField(IntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class LongIntField : Field{
-        int64_t value;
-
-        LongIntField(): value(0){}
-        LongIntField(int64_t val): value(val){}
-
-        LongIntField(const LongIntField &other): value(other.value){}
-        LongIntField(LongIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class UByteIntField : Field{
-        uint8_t value;
-
-        UByteIntField(): value(0){}
-        UByteIntField(uint8_t val): value(val){}
-
-        UByteIntField(const UByteIntField &other): value(other.value){}
-        UByteIntField(UByteIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class UShortIntField : Field{
-        uint16_t value;
-
-        UShortIntField(): value(0){}
-        UShortIntField(uint16_t val): value(val){}
-
-        UShortIntField(const UShortIntField &other): value(other.value){}
-        UShortIntField(UShortIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class UIntField : Field{
-        uint32_t value;
-
-        UIntField(): value(0){}
-        UIntField(uint32_t val): value(val){}
-
-        UIntField(const UIntField &other): value(other.value){}
-        UIntField(UIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-    class ULongIntField : Field{
-        uint64_t value;
-
-        ULongIntField(): value(0){}
-        ULongIntField(uint64_t val): value(val){}
-
-        ULongIntField(const ULongIntField &other): value(other.value){}
-        ULongIntField(ULongIntField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
-
-
-    class StringField : Field{
+    class StringField : public Field{
         char* value;
 
-        StringField(): value(nullptr){}
-
-        StringField(const char* val){
-            size_t n = strlen(val);
-            value = new char[n];
-            memcpy(value, val, n);
-        }
-
-        StringField(const std::string val){
-            size_t n = val.size();
-            value = new char[n+1];
-            for(int i = 0; i < n; ++i){
-                value[i] = val[i];
-            }
-            value[n] = '\0';
-        }
-
-        StringField(const StringField &other){
-            size_t n = strlen(other.value);
-            value = new char[n];
-            memcpy(value, other.value, n);
-        }
-
-        StringField(StringField &&other): value(nullptr){
+        void swap(StringField &other){
+            std::swap(name, other.name);
             std::swap(value, other.value);
         }
+
+        StringField(const char* str): Field(str), value(nullptr){}
+        StringField(const std::string &str): Field(str), value(nullptr){}
+        
+        StringField(const char* namestr, const char* valstr): Field(namestr), value(strcpy(new char[strlen(valstr)+1], valstr)){}
+        StringField(const std::string &namestr, const char* valstr): Field(namestr), value(strcpy(new char[strlen(valstr)+1], valstr)){}
+
+        StringField(const char* namestr, const std::string &valstr): Field(namestr), value(strcpy(new char[valstr.size()+1], valstr.c_str())){}
+        StringField(const std::string &namestr, const std::string &valstr): Field(namestr), value(strcpy(new char[valstr.size()+1], valstr.c_str())){}
+
+        StringField(const StringField &other): Field(other.name), value(strcpy(new char[strlen(other.value)+1], other.value)){}
+
+        StringField(StringField &&other): value(nullptr) {swap(other);}
 
         ~StringField(){
             delete value;
         }
 
     public:
-        std::string getValue() const{
+        inline std::string getValue() const{
             return value == nullptr ? std::string("") : std::string(value);
         }
     };
 
-    class BoolField : Field{
+    class BoolField : public Field{
         bool value;
 
-        BoolField(): value(false){}
-        BoolField(bool val): value(val){}
-
-        BoolField(const BoolField &other): value(other.value){}
-        BoolField(BoolField &&other){
+        void swap(BoolField &other){
+            std::swap(name, other.name);
             std::swap(value, other.value);
         }
 
     public:
-        std::string getValue() const{
+        BoolField(const char* str): Field(str), value(false){}
+        BoolField(const std::string &str): Field(str), value(false){}
+        
+        BoolField(const char* str, bool val): Field(str), value(val){}
+        BoolField(const std::string &str, bool val): Field(str), value(val){}
+
+        BoolField(const BoolField &other): Field(other.name), value(other.value){}
+        BoolField(BoolField &&other) noexcept{swap(other);}
+
+        inline std::string getValue() const{
             return value ? "TRUE" : "FALSE";
         }
     };
-
-    class DoubleField : Field{
-        double value;
-
-        DoubleField(): value(0){}
-        DoubleField(double val): value(val){}
-
-        DoubleField(const DoubleField &other): value(other.value){}
-        DoubleField(DoubleField &&other){
-            std::swap(value, other.value);
-        }
-
-    public:
-        std::string getValue() const{
-            return std::to_string(value);
-        }
-    };
 };
+
+#endif
