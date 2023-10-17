@@ -44,6 +44,10 @@ namespace DB{
         inline std::string getValue() const{
             return std::to_string(value);
         }
+
+        inline void setValue(T val){
+            value = val;
+        }
     };
 
     class StringField : public Field{
@@ -54,6 +58,7 @@ namespace DB{
             std::swap(value, other.value);
         }
 
+    public:
         StringField(const char* str): Field(str), value(nullptr){}
         StringField(const std::string &str): Field(str), value(nullptr){}
         
@@ -70,10 +75,17 @@ namespace DB{
         ~StringField(){
             delete value;
         }
-
-    public:
+    
         inline std::string getValue() const{
             return value == nullptr ? std::string("") : std::string(value);
+        }
+
+        inline void setValue(std::string &val){
+            strcpy(value, val.c_str());
+        }
+        
+        inline void setValue(const char* val){
+            strcpy(value, val);
         }
     };
 
@@ -97,6 +109,37 @@ namespace DB{
 
         inline std::string getValue() const{
             return value ? "TRUE" : "FALSE";
+        }
+        
+        inline void setValue(bool val){
+            value = val;
+        }
+    };
+
+    class DoubleField : public Field{
+        double value;
+
+        void swap(DoubleField &other){
+            std::swap(name, other.name);
+            std::swap(value, other.value);
+        }
+
+    public:
+        DoubleField(const char* str): Field(str), value(false){}
+        DoubleField(const std::string &str): Field(str), value(false){}
+        
+        DoubleField(const char* str, bool val): Field(str), value(val){}
+        DoubleField(const std::string &str, bool val): Field(str), value(val){}
+
+        DoubleField(const DoubleField &other): Field(other.name), value(other.value){}
+        DoubleField(DoubleField &&other) noexcept{swap(other);}
+
+        inline std::string getValue() const{
+            return std::to_string(value);
+        }
+
+        inline void setValue(double val){
+            value = val;
         }
     };
 };
