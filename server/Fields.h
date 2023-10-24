@@ -1,7 +1,11 @@
 #ifndef PEPENGU_FIELDS_H
 #define PEPENGU_FIELDS_H
+
 #include <string>
 #include <cstring>
+#include <memory>
+#include <map>
+#include <type_traits>
 
 namespace DB{
     class Field{
@@ -17,16 +21,18 @@ namespace DB{
             delete name;
         }
 
+        static void copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to);
+
         virtual inline std::string getValue() const = 0;
         inline std::string getName(){return std::string(name);}
     };
 
 
-    template<typename T>
-    class NumberField : public Field{
-        T value;
+    template<typename Integer, typename = std::enable_if<std::is_integral<Integer>::value>>
+    class NumberField: public Field{
+        Integer value;
 
-        void swap(NumberField<T> &other){
+        void swap(NumberField<Integer> &other){
             std::swap(name, other.name);
             std::swap(value, other.value);
         }
@@ -35,8 +41,8 @@ namespace DB{
         NumberField(const char* str): Field(str), value(0){}
         NumberField(const std::string &str): Field(str), value(0){}
         
-        NumberField(const char* str, T val): Field(str), value(val){}
-        NumberField(const std::string &str, T val): Field(str), value(val){}
+        NumberField(const char* str, Integer val): Field(str), value(val){}
+        NumberField(const std::string &str, Integer val): Field(str), value(val){}
 
         NumberField(const NumberField &other): Field(other.name), value(other.value){}
         NumberField(NumberField &&other) noexcept{swap(other);}
@@ -45,7 +51,7 @@ namespace DB{
             return std::to_string(value);
         }
 
-        inline void setValue(T val){
+        inline void setValue(Integer val){
             value = val;
         }
     };
@@ -80,12 +86,12 @@ namespace DB{
             return value == nullptr ? std::string("") : std::string(value);
         }
 
-        inline void setValue(std::string &val){
-            strcpy(value, val.c_str());
+        inline void setValue(const std::string &val){
+            strncpy(value=new char[val.size()+1]{0}, val.c_str(), val.size());
         }
         
         inline void setValue(const char* val){
-            strcpy(value, val);
+            strncpy(value=new char[strlen(val)], val, strlen(val));
         }
     };
 
@@ -141,6 +147,34 @@ namespace DB{
         inline void setValue(double val){
             value = val;
         }
+    };
+
+    static std::map<std::string, int> _str2Idx{
+        {"byte", 0},
+        {"short int", 1},
+        {"int", 2},
+        {"long int", 3},
+        {"unsigned byte", 4},
+        {"unsigned short int", 5},
+        {"unsigned int", 6},
+        {"unsigned long int", 7},
+        {"bool", 8},
+        {"double", 9},
+        {"string", 10}
+    };
+
+    static std::map<size_t, size_t> _hash2Idx{
+        {typeid(NumberField<int8_t>).hash_code(), 0},
+        {typeid(NumberField<int16_t>).hash_code(), 1},
+        {typeid(NumberField<int32_t>).hash_code(), 2},
+        {typeid(NumberField<int64_t>).hash_code(), 3},
+        {typeid(NumberField<uint8_t>).hash_code(), 4},
+        {typeid(NumberField<uint16_t>).hash_code(), 5},
+        {typeid(NumberField<uint32_t>).hash_code(), 6},
+        {typeid(NumberField<uint64_t>).hash_code(), 7},
+        {typeid(BoolField).hash_code(), 8},
+        {typeid(DoubleField).hash_code(), 9},
+        {typeid(StringField).hash_code(), 10}
     };
 };
 
