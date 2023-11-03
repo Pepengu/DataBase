@@ -10,13 +10,13 @@
 
 
 namespace DB{
-    class structure{
+    class DataBase;
+    class Entry{
     private:
         std::vector<std::unique_ptr<DB::Field>> _entry;
         std::map<std::string, size_t> _name2idx;
-        size_t backup_frequency;
 
-        void swap(structure &other){
+        void swap(Entry &other){
             std::swap(_entry, other._entry);
             std::swap(_name2idx, other._name2idx);
         }
@@ -24,30 +24,23 @@ namespace DB{
         static void copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to);
 
     public:
-        structure(){}
-        structure(const std::vector<std::unique_ptr<DB::Field>> &v){
-            size_t idx = 0;
-            for(const auto &el : _entry){
-                _name2idx[el->getName()] = idx++;
-            }
+        Entry(){}
+        Entry(const std::vector<std::unique_ptr<DB::Field>> &v): _entry(v){}
 
-        }
-
-        structure &operator=(const structure &other){
+        Entry &operator=(const Entry &other){
             _entry.resize(other._entry.size());
             for(size_t i = 0; i < other._entry.size(); ++i){
                 copyField(other._entry[i], _entry[i]);
             }
 
-            size_t idx = 0;
-            for(const auto &el : _entry){
-                _name2idx[el->getName()] = idx++;
+            for(auto &[key, value] : other._name2idx){
+                _name2idx[key] = value;
             }
 
             return *this;
         }
 
-        structure &operator=(structure &&other){
+        Entry &operator=(Entry &&other){
             swap(other);
             return *this;
         }
@@ -55,24 +48,32 @@ namespace DB{
         size_t nameToIdx(const std::string &str);
         size_t nameToIdx(const char* str);
 
+        bool isSame();
+
+        bool operator==(const Entry &other);
+        bool operator<(const Entry &other);
+        bool operator>(const Entry &other);
+
         friend DataBase;
     };
 
 
     class DataBase{
     private:
-        structure _struct;
+        Entry _structure;
         std::map<std::string, std::string> _accounts;
         size_t _backup_frequency;
+        std::string _file;
         size_t _backup_count;
+        std::vector<Entry> _entries;
         
-        void parseConfig(std::ifstream &cfg);
+        void _parseConfig(std::ifstream &cfg);
 
-        size_t processEntry(std::ifstream &cfg);
-        size_t processUsers(std::ifstream &cfg);
-        size_t processAddress(std::ifstream &cfg);
-        size_t processFile(std::ifstream &cfg);
-        size_t processBackupFrequency(std::ifstream &cfg);
+        size_t _processEntry(std::ifstream &cfg);
+        size_t _processUsers(std::ifstream &cfg);
+        size_t _processAddress(std::ifstream &cfg);
+        size_t _processFile(std::ifstream &cfg);
+        size_t _processBackupFrequency(std::ifstream &cfg);
 
     public:
         DataBase(const char* configFile): _backup_count(100){
@@ -81,8 +82,11 @@ namespace DB{
                 throw std::invalid_argument("Config file can not be oppened");
             }
 
-            parseConfig(cfg);
+            _parseConfig(cfg);
         }
+
+        void addRecord();
+        void save();
     };
 }
 
