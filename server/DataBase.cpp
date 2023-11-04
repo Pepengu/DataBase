@@ -2,16 +2,7 @@
 #include <iostream>
 #include <functional>
 
-size_t DB::structure::nameToIdx(const std::string &str){
-    return _name2idx[str];
-}
-
-size_t DB::structure::nameToIdx(const char* str){
-    return nameToIdx(std::string(str));
-}
-
-
-void DB::structure::copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to){
+void DB::Entry::copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to){
     if(from.get() != nullptr){
         const DB::Field *ptr = from.get();
         switch (DB::_hash2Idx[typeid(*ptr).hash_code()]){
@@ -58,13 +49,13 @@ void DB::structure::copyField(const std::unique_ptr<DB::Field> &from, std::uniqu
     }
 }
 
-void DB::DataBase::parseConfig(std::ifstream &cfg){
+void DB::DataBase::_parseConfig(std::ifstream &cfg){
     std::map<std::string, std::function<size_t(std::ifstream &cfg)>> m{
-        {"entry", std::bind(&DB::DataBase::processEntry, this, std::placeholders::_1)},
-        {"users", std::bind(&DB::DataBase::processUsers, this, std::placeholders::_1)},
-        {"address", std::bind(&DB::DataBase::processAddress, this, std::placeholders::_1)},
-        {"file", std::bind(&DB::DataBase::processFile, this, std::placeholders::_1)},
-        {"backup_frequency", std::bind(&DB::DataBase::processBackupFrequency, this, std::placeholders::_1)}
+        {"entry", std::bind(&DB::DataBase::_processEntry, this, std::placeholders::_1)},
+        {"users", std::bind(&DB::DataBase::_processUsers, this, std::placeholders::_1)},
+        {"address", std::bind(&DB::DataBase::_processAddress, this, std::placeholders::_1)},
+        {"file", std::bind(&DB::DataBase::_processFile, this, std::placeholders::_1)},
+        {"backup_frequency", std::bind(&DB::DataBase::_processBackupFrequency, this, std::placeholders::_1)}
     };
 
     size_t line = 1;
@@ -90,6 +81,7 @@ void DB::DataBase::parseConfig(std::ifstream &cfg){
                 cfg.ignore();
             }
             
+            std::cout << "processing " << command << std::endl;
             line += m[command](cfg);
         }
         catch(size_t l){
@@ -103,7 +95,7 @@ void DB::DataBase::parseConfig(std::ifstream &cfg){
     }
 }
 
-size_t DB::DataBase::processEntry(std::ifstream &cfg){
+size_t DB::DataBase::_processEntry(std::ifstream &cfg){
     bool isMultiline = cfg.peek() == '{';
     if(isMultiline){
         cfg.ignore();
@@ -127,39 +119,40 @@ size_t DB::DataBase::processEntry(std::ifstream &cfg){
         if(_str2Idx.find(type) == _str2Idx.end()){
             throw line;
         }
+        _name2idx[name] = _structure._entry.size();
         switch (_str2Idx[type]){
         case 0:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<int8_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<int8_t>>());
             break;
         case 1:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<int16_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<int16_t>>());
             break;
         case 2:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<int32_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<int32_t>>());
             break;
         case 3:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<int64_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<int64_t>>());
             break;
         case 4:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<uint8_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<uint8_t>>());
             break;
         case 5:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<uint16_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<uint16_t>>());
             break;
         case 6:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<uint32_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<uint32_t>>());
             break;
         case 7:
-            _struct._entry.push_back(std::make_unique<DB::NumberField<uint64_t>>(name));
+            _structure._entry.push_back(std::make_unique<DB::NumberField<uint64_t>>());
             break;
         case 8:
-            _struct._entry.push_back(std::make_unique<DB::BoolField>(name));
+            _structure._entry.push_back(std::make_unique<DB::BoolField>());
             break;
         case 9:
-            _struct._entry.push_back(std::make_unique<DB::DoubleField>(name));
+            _structure._entry.push_back(std::make_unique<DB::DoubleField>());
             break;
         case 10:
-            _struct._entry.push_back(std::make_unique<DB::StringField>(name));
+            _structure._entry.push_back(std::make_unique<DB::StringField>());
             break;
         
         default:
@@ -172,7 +165,7 @@ size_t DB::DataBase::processEntry(std::ifstream &cfg){
     return line;
 }
 
-size_t DB::DataBase::processUsers(std::ifstream &cfg){
+size_t DB::DataBase::_processUsers(std::ifstream &cfg){
     bool isMultiline = cfg.peek() == '{';
     if(isMultiline){
         cfg.ignore();
@@ -201,7 +194,7 @@ size_t DB::DataBase::processUsers(std::ifstream &cfg){
     return line;
 }
 
-size_t DB::DataBase::processAddress(std::ifstream &cfg){
+size_t DB::DataBase::_processAddress(std::ifstream &cfg){
     std::string addr;
     getline(cfg, addr, '\n');
 
@@ -210,26 +203,118 @@ size_t DB::DataBase::processAddress(std::ifstream &cfg){
     return 0;
 }
 
-size_t DB::DataBase::processFile(std::ifstream &cfg){
-    std::string fileName;
-    getline(cfg, fileName, '\n');
+size_t DB::DataBase::_processFile(std::ifstream &cfg){
+    getline(cfg, _file, '\n');
 
-    std::ifstream file(fileName, std::ios_base::binary);
+    std::ifstream file(_file, std::ios_base::binary);
     if(!file.is_open()){
-        std::ofstream temp(fileName);
+        std::ofstream temp(_file);
         temp.close();
-        file.open(fileName, std::ios_base::binary);
-    }
-    if(!file.is_open()){
-        throw std::invalid_argument("File can not be accesed");
+        file.open(_file, std::ios_base::binary);
+        if(!file.is_open()){
+            throw std::invalid_argument("File can not be accesed");
+        }
+        return 0;
     }
 
-    //TODO: loading database from file
+    std::string fileType(DB::signature.size(), 0);
+    for(size_t idx = 0; idx < DB::signature.size(); ++idx){
+        file.get(fileType[idx]);
+    }
+    
+    if(fileType != DB::signature){
+        file.close();
+        throw std::invalid_argument("Database file is not compatible or corrupted");
+    }
 
+    for(const auto &field : _structure._entry){
+        auto &ptr = *field.get();
+        if(file.get() != DB::_hash2Idx[typeid(ptr).hash_code()]){
+            file.close();
+            throw std::invalid_argument("Database file has a different structure");
+        }
+    }
+
+
+    while (file.peek() != EOF){
+        std::vector<std::unique_ptr<DB::Field>> new_Entry(_structure._entry.size()); 
+        for(int field = 0; field < _structure._entry.size(); ++field){
+            char input[128];
+            auto &ptr = *_structure._entry[field].get();
+            switch (DB::_hash2Idx[typeid(ptr).hash_code()]){
+            case 0:
+                file.read(input, sizeof(int8_t));
+                new_Entry[field] = std::make_unique<NumberField<int8_t>>(*reinterpret_cast<int8_t*>(input));
+                break;
+            case 1:
+                file.read(input, sizeof(int16_t));
+                new_Entry[field] = std::make_unique<NumberField<int16_t>>(*reinterpret_cast<int16_t*>(input));
+                break;
+            case 2:
+                file.read(input, sizeof(int32_t));
+                new_Entry[field] = std::make_unique<NumberField<int32_t>>(*reinterpret_cast<int32_t*>(input));
+                break;
+            case 3:
+                file.read(input, sizeof(int64_t));
+                new_Entry[field] = std::make_unique<NumberField<int64_t>>(*reinterpret_cast<int64_t*>(input));
+                break;
+            case 4:
+                file.read(input, sizeof(uint8_t));
+                new_Entry[field] = std::make_unique<NumberField<uint8_t>>(*reinterpret_cast<uint8_t*>(input));
+                break;
+            case 5:
+                file.read(input, sizeof(uint16_t));
+                new_Entry[field] = std::make_unique<NumberField<uint16_t>>(*reinterpret_cast<uint16_t*>(input));
+                break;
+            case 6:
+                file.read(input, sizeof(uint32_t));
+                new_Entry[field] = std::make_unique<NumberField<uint32_t>>(*reinterpret_cast<uint32_t*>(input));
+                break;
+            case 7:
+                file.read(input, sizeof(uint64_t));
+                new_Entry[field] = std::make_unique<NumberField<uint64_t>>(*reinterpret_cast<uint64_t*>(input));
+                break;
+            case 8:
+                file.read(input, sizeof(bool));
+                new_Entry[field] = std::make_unique<BoolField>(*reinterpret_cast<bool*>(input));
+                break;
+            case 9:
+                file.read(input, sizeof(double));
+                new_Entry[field] = std::make_unique<DoubleField>(*reinterpret_cast<double*>(input));
+                break;
+            case 10:
+                file.getline(input, 128, '\0');
+                new_Entry[field] = std::make_unique<StringField>(input);
+                break;
+            }
+        }
+        _entries.push_back(std::move(new_Entry));
+    }
+    
     return 0;
 }
 
-size_t DB::DataBase::processBackupFrequency(std::ifstream &cfg){
+size_t DB::DataBase::_processBackupFrequency(std::ifstream &cfg){
     cfg >> _backup_frequency;
     return 0;
+}
+
+
+void DB::DataBase::save(){
+    std::ofstream out(_file, std::ios_base::binary);
+    if(!out.is_open()){
+        throw "Save file can not be accesed. Make sure it is not being used by other program";
+    }
+
+    out << DB::signature;
+    for(const auto &field : _structure._entry){
+        auto &ptr = *field.get();
+        out.put(DB::_hash2Idx[typeid(ptr).hash_code()]);
+    }
+
+    for(const auto &entry : _entries){
+        for(const auto &field : entry._entry){
+            out << field->getValue();
+        }
+    }
 }

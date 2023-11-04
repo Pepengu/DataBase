@@ -13,6 +13,10 @@ namespace DB
     {
     public:
         Field(){}
+        ~Field(){}
+
+        Field(const Field &other){}
+        Field(Field &&other){}
 
         static void copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to);
 
@@ -130,7 +134,7 @@ namespace DB
     public:
         DoubleField() : value(false) {}
 
-        DoubleField(bool val) : value(val) {}
+        DoubleField(double val) : value(val) {}
 
         DoubleField(const DoubleField &other) : value(other.value) {}
         DoubleField(DoubleField &&other) noexcept { swap(other); }
@@ -159,7 +163,7 @@ namespace DB
         {"double", 9},
         {"string", 10}};
 
-    static std::map<size_t, size_t> _hash2Idx{
+    static std::map<size_t, uint8_t> _hash2Idx{
         {typeid(NumberField<int8_t>).hash_code(), 0},
         {typeid(NumberField<int16_t>).hash_code(), 1},
         {typeid(NumberField<int32_t>).hash_code(), 2},

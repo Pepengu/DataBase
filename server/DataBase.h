@@ -10,22 +10,42 @@
 
 
 namespace DB{
+    const std::string signature("PepenguDB");
+
     class DataBase;
     class Entry{
-    private:
+    public:
         std::vector<std::unique_ptr<DB::Field>> _entry;
-        std::map<std::string, size_t> _name2idx;
 
-        void swap(Entry &other){
+        void swap(Entry &&other){
             std::swap(_entry, other._entry);
-            std::swap(_name2idx, other._name2idx);
         }
 
         static void copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to);
 
     public:
         Entry(){}
-        Entry(const std::vector<std::unique_ptr<DB::Field>> &v): _entry(v){}
+        Entry(const std::vector<std::unique_ptr<DB::Field>> &v): _entry(v.size()){
+            for(size_t i = 0; i < _entry.size(); ++i){
+                copyField(v[i], _entry[i]);
+            }
+        }
+
+        Entry(std::vector<std::unique_ptr<DB::Field>> &&v): _entry(v.size()){
+            for(size_t i = 0; i < _entry.size(); ++i){
+                _entry[i] = std::move(v[i]);
+            }
+        }
+
+        Entry(const Entry &other): _entry(other._entry.size()){
+            for(size_t field = 0; field < _entry.size(); ++field){
+                copyField(other._entry[field], _entry[field]);
+            }
+        }
+        
+        Entry(Entry &&other){
+            swap(std::move(other));
+        }
 
         Entry &operator=(const Entry &other){
             _entry.resize(other._entry.size());
@@ -33,22 +53,13 @@ namespace DB{
                 copyField(other._entry[i], _entry[i]);
             }
 
-            for(auto &[key, value] : other._name2idx){
-                _name2idx[key] = value;
-            }
-
             return *this;
         }
 
         Entry &operator=(Entry &&other){
-            swap(other);
+            swap(std::move(other));
             return *this;
         }
-
-        size_t nameToIdx(const std::string &str);
-        size_t nameToIdx(const char* str);
-
-        bool isSame();
 
         bool operator==(const Entry &other);
         bool operator<(const Entry &other);
@@ -59,9 +70,10 @@ namespace DB{
 
 
     class DataBase{
-    private:
+    public:
         Entry _structure;
         std::map<std::string, std::string> _accounts;
+        std::map<std::string, size_t> _name2idx;
         size_t _backup_frequency;
         std::string _file;
         size_t _backup_count;
