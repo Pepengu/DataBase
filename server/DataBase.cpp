@@ -1,53 +1,5 @@
 #include "DataBase.h"
-#include <iostream>
 #include <functional>
-
-void DB::Entry::copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to){
-    if(from.get() != nullptr){
-        const DB::Field *ptr = from.get();
-        switch (DB::_hash2Idx[typeid(*ptr).hash_code()]){
-            case 0:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<int8_t>(*dynamic_cast<const DB::NumberField<int8_t>*>(ptr)));
-                break;
-            case 1:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<int16_t>(*dynamic_cast<const DB::NumberField<int16_t>*>(ptr)));
-                break;
-            case 2:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<int32_t>(*dynamic_cast<const DB::NumberField<int32_t>*>(ptr)));
-                break;
-            case 3:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<int64_t>(*dynamic_cast<const DB::NumberField<int64_t>*>(ptr)));
-                break;
-            case 4:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<uint8_t>(*dynamic_cast<const DB::NumberField<uint8_t>*>(ptr)));
-                break;
-            case 5:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<uint16_t>(*dynamic_cast<const DB::NumberField<uint16_t>*>(ptr)));
-                break;
-            case 6:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<uint32_t>(*dynamic_cast<const DB::NumberField<uint32_t>*>(ptr)));
-                break;
-            case 7:
-                to = std::unique_ptr<DB::Field>(new DB::NumberField<uint64_t>(*dynamic_cast<const DB::NumberField<uint64_t>*>(ptr)));
-                break;
-            case 8:
-                to = std::unique_ptr<DB::Field>(new DB::BoolField(*dynamic_cast<const DB::BoolField*>(ptr)));
-                break;
-            case 9:
-                to = std::unique_ptr<DB::Field>(new DB::DoubleField(*dynamic_cast<const DB::DoubleField*>(ptr)));
-                break;
-            case 10:
-                to = std::unique_ptr<DB::Field>(new DB::StringField(*dynamic_cast<const DB::StringField*>(ptr)));
-                break;
-            default:
-                throw std::invalid_argument("Unknown field type occured");
-                break;
-        }
-    }
-    else{
-        throw std::invalid_argument("Empty field occured");
-    }
-}
 
 void DB::DataBase::_parseConfig(std::ifstream &cfg){
     std::map<std::string, std::function<size_t(std::ifstream &cfg)>> m{
@@ -119,40 +71,40 @@ size_t DB::DataBase::_processEntry(std::ifstream &cfg){
         if(_str2Idx.find(type) == _str2Idx.end()){
             throw line;
         }
-        _name2idx[name] = _structure._entry.size();
+        _name2idx[name] = _structure.size();
         switch (_str2Idx[type]){
         case 0:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<int8_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<int8_t>>());
             break;
         case 1:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<int16_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<int16_t>>());
             break;
         case 2:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<int32_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<int32_t>>());
             break;
         case 3:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<int64_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<int64_t>>());
             break;
         case 4:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<uint8_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<uint8_t>>());
             break;
         case 5:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<uint16_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<uint16_t>>());
             break;
         case 6:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<uint32_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<uint32_t>>());
             break;
         case 7:
-            _structure._entry.push_back(std::make_unique<DB::NumberField<uint64_t>>());
+            _structure.push_back(std::make_unique<DB::NumberField<uint64_t>>());
             break;
         case 8:
-            _structure._entry.push_back(std::make_unique<DB::BoolField>());
+            _structure.push_back(std::make_unique<DB::BoolField>());
             break;
         case 9:
-            _structure._entry.push_back(std::make_unique<DB::DoubleField>());
+            _structure.push_back(std::make_unique<DB::DoubleField>());
             break;
         case 10:
-            _structure._entry.push_back(std::make_unique<DB::StringField>());
+            _structure.push_back(std::make_unique<DB::StringField>());
             break;
         
         default:
@@ -227,7 +179,7 @@ size_t DB::DataBase::_processFile(std::ifstream &cfg){
         throw std::invalid_argument("Database file is not compatible or corrupted");
     }
 
-    for(const auto &field : _structure._entry){
+    for(const auto &field : _structure){
         auto &ptr = *field.get();
         if(file.get() != DB::_hash2Idx[typeid(ptr).hash_code()]){
             file.close();
@@ -237,10 +189,10 @@ size_t DB::DataBase::_processFile(std::ifstream &cfg){
 
 
     while (file.peek() != EOF){
-        std::vector<std::unique_ptr<DB::Field>> new_Entry(_structure._entry.size()); 
-        for(int field = 0; field < _structure._entry.size(); ++field){
+        std::vector<std::unique_ptr<DB::Field>> new_Entry(_structure.size()); 
+        for(int field = 0; field < _structure.size(); ++field){
             char input[128];
-            auto &ptr = *_structure._entry[field].get();
+            auto &ptr = *_structure[field].get();
             switch (DB::_hash2Idx[typeid(ptr).hash_code()]){
             case 0:
                 file.read(input, sizeof(int8_t));
@@ -290,7 +242,7 @@ size_t DB::DataBase::_processFile(std::ifstream &cfg){
         }
         _entries.push_back(std::move(new_Entry));
     }
-    
+
     return 0;
 }
 
@@ -299,6 +251,19 @@ size_t DB::DataBase::_processBackupFrequency(std::ifstream &cfg){
     return 0;
 }
 
+void DB::DataBase::addRecord(const Entry &entry){
+    _entries.resize(_entries.size()+1);
+    _entries.back().resize(_structure.size());
+    for(size_t field = 0; field < _structure.size(); ++field){
+        DB::Field::copyField(entry[field], _entries.back()[field]);
+    }
+}
+
+void DB::DataBase::remove(size_t idx){
+    if(idx > _entries.size() || _entries[idx].size() == 0) {
+        return;
+    }
+}
 
 void DB::DataBase::save(){
     std::ofstream out(_file, std::ios_base::binary);
@@ -307,13 +272,13 @@ void DB::DataBase::save(){
     }
 
     out << DB::signature;
-    for(const auto &field : _structure._entry){
+    for(const auto &field : _structure){
         auto &ptr = *field.get();
         out.put(DB::_hash2Idx[typeid(ptr).hash_code()]);
     }
 
     for(const auto &entry : _entries){
-        for(const auto &field : entry._entry){
+        for(const auto &field : entry){
             out << field->getValue();
         }
     }

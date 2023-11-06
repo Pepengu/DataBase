@@ -69,7 +69,7 @@ namespace DB
 
         StringField(const std::string &valstr): value(strcpy(new char[valstr.size() + 1], valstr.c_str())) {}
 
-        StringField(const StringField &other): value(strcpy(new char[strlen(other.value) + 1], other.value)) {}
+        StringField(const StringField &other): StringField(other.getValue()){}
 
         StringField(StringField &&other) : value(nullptr) { swap(other); }
 
@@ -176,14 +176,6 @@ namespace DB
         {typeid(DoubleField).hash_code(), 9},
         {typeid(StringField).hash_code(), 10}};
 
-    template <
-        typename T,
-        typename = std::enable_if<std::is_arithmetic<T>::value ||
-                                  std::is_same<T, std::string>::value>>
-    std::unique_ptr<Field> &createField(std::string name, T value)
-    {
-        return std::make_unique<DB::NumberField<T>>(name);
-    }
 };
 
 #endif
