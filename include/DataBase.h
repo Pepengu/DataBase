@@ -1,14 +1,10 @@
-#ifndef PEPENGU_DATABASE_H
-#define PEPENGU_DATABASE_H
-
-#include <fstream>
 #include <vector>
-#include <map>
 #include <memory>
-#include <stdexcept>
-#include <iostream>
-#include "Fields.h"
+#include <fstream>
+#include <map>
+#include <functional>
 
+#include "Fields.h"
 
 namespace DB{
     const std::string signature("PepenguDB");
@@ -91,67 +87,21 @@ namespace DB{
         inline void resize(size_t size){
             _entry.resize(size);
         }
-
-        bool operator==(const Entry &other);
-        bool operator<(const Entry &other);
-        bool operator>(const Entry &other);
     };
 
-
     class DataBase{
-    private:
-        using entries_vector = std::vector<Entry>;
+    protected:
+        std::map<std::string, std::function<size_t(std::ifstream &cfg)>> _configMap{
+            {"entry", std::bind(&DB::DataBase::_processEntry, this, std::placeholders::_1)},
+            {"address", std::bind(&DB::DataBase::_processAddress, this, std::placeholders::_1)}
+        };
 
         Entry _structure;
-        std::map<std::string, std::string> _accounts;
         std::map<std::string, size_t> _name2idx;
-        size_t _backup_frequency;
-        std::string _file;
-        size_t _backup_count;
-        entries_vector _entries;
-        
+
         void _parseConfig(std::ifstream &cfg);
 
         size_t _processEntry(std::ifstream &cfg);
-        size_t _processUsers(std::ifstream &cfg);
         size_t _processAddress(std::ifstream &cfg);
-        size_t _processFile(std::ifstream &cfg);
-        size_t _processBackupFrequency(std::ifstream &cfg);
-
-    public:
-
-        using iterator = entries_vector::iterator;
-        using const_iterator = entries_vector::const_iterator;
-
-        iterator begin() { return _entries.begin(); }
-        iterator end() { return _entries.end(); }
-        const_iterator begin() const { return _entries.begin(); }
-        const_iterator end() const { return _entries.end(); }
-        const_iterator cbegin() const { return _entries.cbegin(); }
-        const_iterator cend() const { return _entries.cend(); }
-
-        DataBase(const char* configFile): _backup_count(100){
-            std::ifstream cfg(configFile);
-            _entries.reserve(2);
-            if(!cfg.is_open()){
-                throw std::invalid_argument("Config file can not be oppened");
-            }
-
-            _parseConfig(cfg);
-        }
-
-        void addRecord(const Entry &entry);
-        Entry &operator[](size_t idx){
-            if(idx >= _entries.size()) {
-                throw std::invalid_argument("Entry with id " + std::to_string(idx) + " does not exist");
-            }
-            return _entries[idx]; 
-        }
-        void remove(size_t idx);
-
-        void save();
     };
 }
-
-
-#endif

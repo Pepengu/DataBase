@@ -9,6 +9,12 @@
 
 namespace DB
 {
+
+    constexpr int DEFAULT_INT = 0;
+    constexpr double DEFAULT_DOUBLE = 0;
+    constexpr bool DEFAULT_BOOl = 0;
+    constexpr char DEFAULT_STRING[1]{0};
+
     class Field
     {
     public:
@@ -35,7 +41,7 @@ namespace DB
         }
 
     public:
-        NumberField() : value(0) {}
+        NumberField() : value(static_cast<Integer>(DEFAULT_INT)) {}
 
         NumberField(Integer val) : value(val) {}
 
@@ -63,7 +69,7 @@ namespace DB
         }
 
     public:
-        StringField() : value(nullptr) {}
+        StringField() {memcpy(value, DEFAULT_STRING, sizeof(DEFAULT_STRING));}
 
         StringField(const char *valstr) : value(strcpy(new char[strlen(valstr) + 1], valstr)) {}
 
@@ -104,7 +110,7 @@ namespace DB
         }
 
     public:
-        BoolField() : value(false) {}
+        BoolField() : value(DEFAULT_BOOl) {}
 
         BoolField(bool val) : value(val) {}
 
@@ -132,7 +138,7 @@ namespace DB
         }
 
     public:
-        DoubleField() : value(false) {}
+        DoubleField() : value(DEFAULT_DOUBLE) {}
 
         DoubleField(double val) : value(val) {}
 
@@ -176,6 +182,33 @@ namespace DB
         {typeid(DoubleField).hash_code(), 9},
         {typeid(StringField).hash_code(), 10}};
 
+    
+    inline std::unique_ptr<DB::Field> createField(const double value){
+        return std::make_unique<DB::DoubleField>(value);
+    }
+
+    inline std::unique_ptr<DB::Field> createField(const bool value){
+        return std::make_unique<DB::BoolField>(value);
+    }
+
+    inline std::unique_ptr<DB::Field> createField(const std::string &value){
+        return std::make_unique<DB::StringField>(value);
+    }
+
+    inline std::unique_ptr<DB::Field> createField(const char* value){
+        return std::make_unique<DB::StringField>(value);
+    }
+
+    inline std::unique_ptr<DB::Field> createField(char* value){
+        return std::make_unique<DB::StringField>(value);
+    }
+
+    template <
+            typename T,
+            typename = std::enable_if<std::is_integral<T>::value>>
+    inline std::unique_ptr<DB::Field> createField(const T value){
+        return std::make_unique<DB::NumberField<T>>(value);
+    }
 };
 
 #endif
