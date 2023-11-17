@@ -7,6 +7,11 @@
 #include <stdexcept>
 
 namespace DB{
+    /**Signature in the begining of Database save file is used to make sure 
+     * file is compatable with current version of program
+    */
+    const std::string signature("PepenguDB");
+
     class DataBaseServer : DataBase{
     private:
         using entries_vector = std::vector<Entry>;

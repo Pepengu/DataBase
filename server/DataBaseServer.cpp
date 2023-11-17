@@ -1,6 +1,10 @@
 #include "DataBaseServer.h"
 #include <iostream>
 #include <functional>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <cstring>
 
 namespace DB{    
     size_t DataBaseServer::_processUsers(std::ifstream &cfg){
@@ -134,7 +138,7 @@ namespace DB{
         _configMap["file"] = std::bind(&DataBaseServer::_processFile, this, std::placeholders::_1);
         _configMap["backup_frequency"] = std::bind(&DataBaseServer::_processBackupFrequency, this, std::placeholders::_1);
         std::ifstream cfg(configFile);
-        _entries.reserve(2);
+        
         if(!cfg.is_open()){
             throw std::invalid_argument("Config file can not be oppened");
         }
