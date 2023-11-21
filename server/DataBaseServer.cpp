@@ -134,11 +134,14 @@ namespace DB{
     }
 
     DataBaseServer::DataBaseServer(const char* configFile): _backup_count(100){
+        log.open("ServerLog.txt");
+
         _configMap["users"] = std::bind(&DataBaseServer::_processUsers, this, std::placeholders::_1);
         _configMap["file"] = std::bind(&DataBaseServer::_processFile, this, std::placeholders::_1);
         _configMap["backup_frequency"] = std::bind(&DataBaseServer::_processBackupFrequency, this, std::placeholders::_1);
 
         _parseConfig(configFile);
+
         save();
     }
 

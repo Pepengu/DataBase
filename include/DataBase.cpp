@@ -1,11 +1,14 @@
 #include "DataBase.h"
 #include <functional>
+#include <chrono>
+#include <ctime>  
 #include <iostream>
 
 namespace DB{
     // ===========================================================================
     // ============================= Entry functions =============================
     // ===========================================================================
+
     std::vector<std::string> getValues(const Entry &entry){
         std::vector<std::string> values(entry.size()); 
         for(size_t idx = 0; idx < entry.size(); ++idx){
@@ -22,27 +25,18 @@ namespace DB{
         }
         return types;
     }
+
 // ==============================================================================
 // ============================= DataBase functions =============================
 // ==============================================================================
-    std::string DataBase::structureToString(){
-        std::string res;
-        
-        for(size_t i = 0; i < _structure.size(); ++i){
-            std::string name("\0");
-            for(const auto &[n, idx] : _name2idx){
-                if(idx == i){
-                    name = n;
-                }
-            }
-            if(name == "\0"){
-                throw std::runtime_error("structure is corrupted");
-            }
 
-            res += name + _structure[i]->getValue();
+    std::string DataBase::_structureToString(){
+        std::string structure;
+        auto types = getTypes(_structure);
+        for(size_t idx = 0; idx < types.size(); ++idx){
+            structure += std::to_string(types[idx]) + ":" + _idx2name[idx] + ":";
         }
-
-        return res;
+        return structure;
     }
 
     void DataBase::_parseConfig(const char* configFile){
@@ -75,7 +69,7 @@ namespace DB{
                     cfg.ignore();
                 }
                 
-                std::cout << "processing " << command << std::endl;
+                log << ("processing " + command);
                 line += _configMap[command](cfg);
             }
             catch(size_t l){

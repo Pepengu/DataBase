@@ -3,6 +3,7 @@
 #include <fstream>
 #include <map>
 #include <functional>
+#include "Logger.h"
 
 #include "Fields.h"
 
@@ -17,6 +18,8 @@ namespace DB{
     */
     class DataBase{
     protected:
+        Logger log;
+
         std::map<std::string, std::function<size_t(std::ifstream &cfg)>> _configMap{
             {"entry", std::bind(&DB::DataBase::_processEntry, this, std::placeholders::_1)}
         };
@@ -25,7 +28,7 @@ namespace DB{
         std::map<std::string, size_t> _name2idx;
         std::vector<std::string> _idx2name;
 
-        std::string structureToString();
+        std::string _structureToString();
 
         void _parseConfig(const char* configFile);
 
