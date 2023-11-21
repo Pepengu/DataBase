@@ -3,71 +3,25 @@
 #include <iostream>
 
 namespace DB{
-// ===========================================================================
-// ============================= Entry functions =============================
-// ===========================================================================
-
-    void Entry::swap(Entry &&other){
-        std::swap(_entry, other._entry);
-    }
-
-    Entry::Entry(const std::vector<std::unique_ptr<DB::Field>> &v): _entry(v.size()){
-        for(size_t i = 0; i < _entry.size(); ++i){
-            Field::copyField(v[i], _entry[i]);
+    // ===========================================================================
+    // ============================= Entry functions =============================
+    // ===========================================================================
+    std::vector<std::string> getValues(const Entry &entry){
+        std::vector<std::string> values(entry.size()); 
+        for(size_t idx = 0; idx < entry.size(); ++idx){
+            values[idx] = entry[idx]->getValue();
         }
+        return values;
     }
 
-    Entry::Entry(std::vector<std::unique_ptr<DB::Field>> &&v): _entry(v.size()){
-        for(size_t i = 0; i < _entry.size(); ++i){
-            _entry[i] = std::move(v[i]);
+    std::vector<FIELDS> getTypes(const Entry &entry){
+        std::vector<FIELDS> types(entry.size()); 
+        for(size_t idx = 0; idx < entry.size(); ++idx){
+            auto &ptr = *entry[idx].get();
+            types[idx] = _hash2Idx[typeid(ptr).hash_code()];
         }
+        return types;
     }
-
-    Entry::Entry(const Entry &other): _entry(other._entry.size()){
-        for(size_t field = 0; field < _entry.size(); ++field){
-            Field::copyField(other._entry[field], _entry[field]);
-        }
-    }
-
-    Entry::Entry(Entry &&other){
-        swap(std::move(other));
-    }
-
-    Entry &Entry::operator=(const Entry &other){
-        _entry.resize(other._entry.size());
-        for(size_t i = 0; i < other._entry.size(); ++i){
-            Field::copyField(other._entry[i], _entry[i]);
-        }
-
-        return *this;
-    }
-
-    Entry &Entry::operator=(Entry &&other){
-        swap(std::move(other));
-        return *this;
-    }
-
-    std::unique_ptr<DB::Field> &Entry::operator [](const size_t idx){
-        return _entry[idx];
-    }
-
-    const std::unique_ptr<DB::Field> &Entry::operator [](const size_t idx) const{
-        return _entry[idx];
-    }
-
-    inline size_t Entry::size() const{
-        return _entry.size();
-    }
-
-    inline void Entry::push_back(const std::unique_ptr<DB::Field> &field){
-        _entry.resize(_entry.size()+1);
-        Field::copyField(field, _entry.back());
-    }
-
-    inline void Entry::resize(size_t size){
-        _entry.resize(size);
-    }
-
 // ==============================================================================
 // ============================= DataBase functions =============================
 // ==============================================================================
@@ -91,7 +45,13 @@ namespace DB{
         return res;
     }
 
-    void DataBase::_parseConfig(std::ifstream &cfg){
+    void DataBase::_parseConfig(const char* configFile){
+        std::ifstream cfg(configFile);
+        
+        if(!cfg.is_open()){
+            throw std::invalid_argument("Config file can not be oppened");
+        }
+        
         size_t line = 1;
         while(cfg.peek() != EOF){
             if(cfg.peek() == '#' || cfg.peek() == '}' || cfg.peek() < 33){
@@ -127,6 +87,8 @@ namespace DB{
 
             ++line;
         }
+
+        cfg.close();
     }
 
     size_t DataBase::_processEntry(std::ifstream &cfg){
@@ -155,37 +117,37 @@ namespace DB{
             }
             _name2idx[name] = _structure.size();
             switch (_str2Idx[type]){
-            case 0:
-                _structure.push_back(createField(static_cast<int8_t>(DEFAULT_INT)));
+            case BYTE:
+                _structure.push_back(createField(static_cast<int8_t>(DEFAULT_BYTE)));
                 break;
-            case 1:
-                _structure.push_back(createField(static_cast<int16_t>(DEFAULT_INT)));
+            case SHORT:
+                _structure.push_back(createField(static_cast<int16_t>(DEFAULT_SHORT)));
                 break;
-            case 2:
+            case INT:
                 _structure.push_back(createField(static_cast<int32_t>(DEFAULT_INT)));
                 break;
-            case 3:
-                _structure.push_back(createField(static_cast<int64_t>(DEFAULT_INT)));
+            case LONG:
+                _structure.push_back(createField(static_cast<int64_t>(DEFAULT_LONG)));
                 break;
-            case 4:
-                _structure.push_back(createField(static_cast<uint8_t>(DEFAULT_INT)));
+            case UBYTE:
+                _structure.push_back(createField(static_cast<uint8_t>(DEFAULT_UBYTE)));
                 break;
-            case 5:
-                _structure.push_back(createField(static_cast<uint16_t>(DEFAULT_INT)));
+            case USHORT:
+                _structure.push_back(createField(static_cast<uint16_t>(DEFAULT_USHORT)));
                 break;
-            case 6:
-                _structure.push_back(createField(static_cast<uint32_t>(DEFAULT_INT)));
+            case UINT:
+                _structure.push_back(createField(static_cast<uint32_t>(DEFAULT_UINT)));
                 break;
-            case 7:
-                _structure.push_back(createField(static_cast<uint64_t>(DEFAULT_INT)));
+            case ULONG:
+                _structure.push_back(createField(static_cast<uint64_t>(DEFAULT_ULONG)));
                 break;
-            case 8:
+            case BOOL:
                 _structure.push_back(createField(DEFAULT_BOOl));
                 break;
-            case 9:
+            case DOUBLE:
                 _structure.push_back(createField(DEFAULT_DOUBLE));
                 break;
-            case 10:
+            case STRING:
                 _structure.push_back(createField(DEFAULT_STRING));
                 break;
             

@@ -137,13 +137,8 @@ namespace DB{
         _configMap["users"] = std::bind(&DataBaseServer::_processUsers, this, std::placeholders::_1);
         _configMap["file"] = std::bind(&DataBaseServer::_processFile, this, std::placeholders::_1);
         _configMap["backup_frequency"] = std::bind(&DataBaseServer::_processBackupFrequency, this, std::placeholders::_1);
-        std::ifstream cfg(configFile);
-        
-        if(!cfg.is_open()){
-            throw std::invalid_argument("Config file can not be oppened");
-        }
 
-        _parseConfig(cfg);
+        _parseConfig(configFile);
         save();
     }
 

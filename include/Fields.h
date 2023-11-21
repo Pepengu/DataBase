@@ -9,8 +9,30 @@
 
 namespace DB
 {
+    //Enum for more convinients fields logic
+    enum FIELDS{
+        BYTE = 0,
+        SHORT = 1,
+        INT = 2,
+        LONG = 3,
+        UBYTE = 4,
+        USHORT = 5,
+        UINT = 6,
+        ULONG = 7,
+        BOOL = 8,
+        DOUBLE = 9,
+        STRING = 10,
+    };
+
     //Values that are used if field is created without specifying it's value
-    constexpr int DEFAULT_INT = 0;
+    constexpr int8_t DEFAULT_BYTE = 0;
+    constexpr int16_t DEFAULT_SHORT = 0;
+    constexpr int32_t DEFAULT_INT = 0;
+    constexpr int64_t DEFAULT_LONG = 0;
+    constexpr uint8_t DEFAULT_UBYTE = 0;
+    constexpr uint16_t DEFAULT_USHORT = 0;
+    constexpr uint32_t DEFAULT_UINT = 0;
+    constexpr uint64_t DEFAULT_ULONG = 0;
     constexpr double DEFAULT_DOUBLE = 0;
     constexpr bool DEFAULT_BOOl = 0;
     constexpr char DEFAULT_STRING[1]{0};
@@ -118,35 +140,35 @@ namespace DB
     /**USE ONLY IF YOU ARE SURE ABOUT WHAT YOU ARE DOING
      * NOT NEEDED IF YOU ARE NOT IMPLEMENTING NEW FIELD TYPES
     */
-    static std::map<std::string, uint8_t> _str2Idx{
-        {"byte", 0},
-        {"short int", 1},
-        {"int", 2},
-        {"long int", 3},
-        {"unsigned byte", 4},
-        {"unsigned short int", 5},
-        {"unsigned int", 6},
-        {"unsigned long int", 7},
-        {"bool", 8},
-        {"double", 9},
-        {"string", 10}
+    static std::map<std::string, FIELDS> _str2Idx{
+        {"byte", BYTE},
+        {"short int", SHORT},
+        {"int", INT},
+        {"long int", LONG},
+        {"unsigned byte", UBYTE},
+        {"unsigned short int", USHORT},
+        {"unsigned int", UINT},
+        {"unsigned long int", ULONG},
+        {"bool", BOOL},
+        {"double", DOUBLE},
+        {"string", STRING}
     };
 
     /**USE ONLY IF YOU ARE SURE ABOUT WHAT YOU ARE DOING
      * NOT NEEDED IF YOU ARE NOT IMPLEMENTING NEW FIELD TYPES
     */
-    static std::map<size_t, uint8_t> _hash2Idx{
-        {typeid(NumberField<int8_t>).hash_code(), 0},
-        {typeid(NumberField<int16_t>).hash_code(), 1},
-        {typeid(NumberField<int32_t>).hash_code(), 2},
-        {typeid(NumberField<int64_t>).hash_code(), 3},
-        {typeid(NumberField<uint8_t>).hash_code(), 4},
-        {typeid(NumberField<uint16_t>).hash_code(), 5},
-        {typeid(NumberField<uint32_t>).hash_code(), 6},
-        {typeid(NumberField<uint64_t>).hash_code(), 7},
-        {typeid(BoolField).hash_code(), 8},
-        {typeid(DoubleField).hash_code(), 9},
-        {typeid(StringField).hash_code(), 10}
+    static std::map<size_t, FIELDS> _hash2Idx{
+        {typeid(NumberField<int8_t>).hash_code(), BYTE},
+        {typeid(NumberField<int16_t>).hash_code(), SHORT},
+        {typeid(NumberField<int32_t>).hash_code(), INT},
+        {typeid(NumberField<int64_t>).hash_code(), LONG},
+        {typeid(NumberField<uint8_t>).hash_code(), UBYTE},
+        {typeid(NumberField<uint16_t>).hash_code(), USHORT},
+        {typeid(NumberField<uint32_t>).hash_code(), UINT},
+        {typeid(NumberField<uint64_t>).hash_code(), ULONG},
+        {typeid(BoolField).hash_code(), BOOL},
+        {typeid(DoubleField).hash_code(), DOUBLE},
+        {typeid(StringField).hash_code(), STRING}
     };
 
     /**Function used to create field whithout without worying about it's stored type 
@@ -158,7 +180,6 @@ namespace DB
     inline std::unique_ptr<DB::Field> createField(const std::string &value){return std::make_unique<DB::StringField>(value);}
     inline std::unique_ptr<DB::Field> createField(const char* value){return std::make_unique<DB::StringField>(value);}
     inline std::unique_ptr<DB::Field> createField(char* value){return std::make_unique<DB::StringField>(value);}
-
 };
 
 #endif

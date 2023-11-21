@@ -4,42 +4,45 @@
 void DB::Field::copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to){
     if(from.get() != nullptr){
         auto &ptr = *from.get();
-        switch (DB::_hash2Idx[typeid(ptr).hash_code()]){
-            case 0:
+        size_t hash = typeid(ptr).hash_code();
+        
+        if(DB::_hash2Idx.find(hash) == DB::_hash2Idx.end()){
+            throw std::invalid_argument("Unknown field type occured");
+        }
+
+        switch (DB::_hash2Idx[hash]){
+            case BYTE:
                 to = std::make_unique<DB::NumberField<int8_t>>(*dynamic_cast<const DB::NumberField<int8_t>*>(&ptr));
                 break;
-            case 1:
+            case SHORT:
                 to = std::make_unique<DB::NumberField<int16_t>>(*dynamic_cast<const DB::NumberField<int16_t>*>(&ptr));
                 break;
-            case 2:
+            case INT:
                 to = std::make_unique<DB::NumberField<int32_t>>(*dynamic_cast<const DB::NumberField<int32_t>*>(&ptr));
                 break;
-            case 3:
+            case LONG:
                 to = std::make_unique<DB::NumberField<int64_t>>(*dynamic_cast<const DB::NumberField<int64_t>*>(&ptr));
                 break;
-            case 4:
+            case UBYTE:
                 to = std::make_unique<DB::NumberField<uint8_t>>(*dynamic_cast<const DB::NumberField<uint8_t>*>(&ptr));
                 break;
-            case 5:
+            case USHORT:
                 to = std::make_unique<DB::NumberField<uint16_t>>(*dynamic_cast<const DB::NumberField<uint16_t>*>(&ptr));
                 break;
-            case 6:
+            case UINT:
                 to = std::make_unique<DB::NumberField<uint32_t>>(*dynamic_cast<const DB::NumberField<uint32_t>*>(&ptr));
                 break;
-            case 7:
+            case ULONG:
                 to = std::make_unique<DB::NumberField<uint64_t>>(*dynamic_cast<const DB::NumberField<uint64_t>*>(&ptr));
                 break;
-            case 8:
+            case BOOL:
                 to = std::make_unique<DB::BoolField>(*dynamic_cast<const DB::BoolField*>(&ptr));
                 break;
-            case 9:
+            case DOUBLE:
                 to = std::make_unique<DB::DoubleField>(*dynamic_cast<const DB::DoubleField*>(&ptr));
                 break;
-            case 10:
+            case STRING:
                 to = std::make_unique<DB::StringField>(*dynamic_cast<const DB::StringField*>(&ptr));
-                break;
-            default:
-                throw std::invalid_argument("Unknown field type occured");
                 break;
         }
     }
