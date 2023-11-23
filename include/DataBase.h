@@ -8,11 +8,21 @@
 #include "Fields.h"
 
 namespace DB{
+    const int PORT = 8080;
     /**Entry is a vector of fields
     */
     using Entry = std::vector<std::unique_ptr<DB::Field>>;
     std::vector<std::string> getValue(const Entry &entry);
     std::vector<FIELDS> getTypes(const Entry &entry);
+
+    enum requestType{
+        connection = 0,
+        add = 1,
+        remove = 2,
+        edit = 3,
+        dump = 4,
+        filter = 5
+    };
 
     /**Base class of a Data Base
     */

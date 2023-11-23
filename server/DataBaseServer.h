@@ -41,10 +41,11 @@ namespace DB{
 
         DataBaseServer(const char* configFile);
 
+        size_t validateRequest(const char* request);
+
         void addRecord(const Entry &entry);
         Entry &operator[](size_t idx);
         void remove(size_t idx);
-
         void save();
     };
 }

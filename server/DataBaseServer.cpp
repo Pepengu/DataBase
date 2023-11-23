@@ -25,8 +25,11 @@ namespace DB{
 
             std::string login = str.substr(0, str.find_first_of(':'));
             login = login.substr(0,login.find_first_of(' '));
-            std::string password = str.substr(str.find_first_of(':')+1);
-            password = password.substr(password.find_first_of(' ')); 
+            std::string password = str.substr(str.find_first_of(':') + 1);
+            size_t leading_spaces = password.find_first_of(' ');
+            if(leading_spaces != std::string::npos){
+                password = password.substr(password.find_first_of(' ') + 1); 
+            }
 
             _accounts[login] = password;
 
@@ -143,6 +146,39 @@ namespace DB{
         _parseConfig(configFile);
 
         save();
+    }
+
+    size_t DB::DataBaseServer::validateRequest(const char* request){
+        std::string structure = _structureToString();
+        std::string username(request);
+        size_t request_idx = strlen(request) + 1;
+        std::string password(request + request_idx);
+        request_idx += strlen(request + request_idx) + 1;
+
+        if(_accounts.find(username) == _accounts.end()){
+            throw std::runtime_error("Unkmown username");
+        }
+
+        if(_accounts[username] != password){
+            std::cout << (int)_accounts[username][0] << std::endl;
+            std::cout << password << "" << _accounts[username] << std::endl;
+            throw std::runtime_error("Wrong password");
+        }
+
+        if(_structure.size() != std::atoi(request + request_idx)){
+            throw std::runtime_error("Structures differ");
+        }
+        request_idx += strlen(request + request_idx) + 1;
+
+        for(int structure_idx = 0; 
+                request_idx < 1024 && structure_idx < _structure.size();
+                ++structure_idx, ++request_idx){
+            if(request[request_idx] != structure[structure_idx]){
+                throw std::runtime_error("Structures differ");
+            }
+        }
+
+        return request_idx;
     }
 
     void DB::DataBaseServer::addRecord(const Entry &entry){

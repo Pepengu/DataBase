@@ -34,7 +34,8 @@ namespace DB{
         std::string structure;
         auto types = getTypes(_structure);
         for(size_t idx = 0; idx < types.size(); ++idx){
-            structure += std::to_string(types[idx]) + ":" + _idx2name[idx] + ":";
+            structure += std::to_string(types[idx]) + ":" + _idx2name[idx];
+            structure.push_back('\0');
         }
         return structure;
     }
@@ -109,6 +110,8 @@ namespace DB{
             if(_str2Idx.find(type) == _str2Idx.end()){
                 throw line;
             }
+
+            _idx2name.push_back(name);
             _name2idx[name] = _structure.size();
             switch (_str2Idx[type]){
             case BYTE:

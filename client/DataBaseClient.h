@@ -7,8 +7,6 @@
 #include "DataBase.h"
 
 namespace DB{
-    const int PORT = 8080;
-
     class DataBaseClient : DataBase{
     private:
         std::string _request;
@@ -29,5 +27,7 @@ namespace DB{
         DataBaseClient(const char* configFile);
         
         ~DataBaseClient(){close(_client_fd);}
+
+        void send_command(const std::string &command);
     };
 }

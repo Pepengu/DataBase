@@ -180,6 +180,6 @@ namespace DB
     inline std::unique_ptr<DB::Field> createField(const std::string &value){return std::make_unique<DB::StringField>(value);}
     inline std::unique_ptr<DB::Field> createField(const char* value){return std::make_unique<DB::StringField>(value);}
     inline std::unique_ptr<DB::Field> createField(char* value){return std::make_unique<DB::StringField>(value);}
-};
+}
 
 #endif
