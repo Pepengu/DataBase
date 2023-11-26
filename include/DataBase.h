@@ -16,12 +16,12 @@ namespace DB{
     std::vector<FIELDS> getTypes(const Entry &entry);
 
     enum requestType{
-        connection = 0,
-        add = 1,
-        remove = 2,
-        edit = 3,
-        dump = 4,
-        filter = 5
+        connection,
+        add,
+        remove,
+        edit,
+        dump,
+        filter
     };
 
     /**Base class of a Data Base
@@ -43,5 +43,24 @@ namespace DB{
         void _parseConfig(const char* configFile);
 
         size_t _processEntry(std::ifstream &cfg);
+    };
+
+    enum status : unsigned char{
+        success = 0x00,
+        connection_success,
+
+        connention_error = 0x10,
+        username_invalid,
+        password_invalid,
+        structure_differ,
+
+        addition_error = 0x20,
+
+        edit_error = 0x30,
+
+        filter_error = 0x40,
+
+        causeMask = 0xF,
+        typeMask  = 0xF0
     };
 }

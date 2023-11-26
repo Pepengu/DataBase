@@ -156,17 +156,17 @@ namespace DB{
         request_idx += strlen(request + request_idx) + 1;
 
         if(_accounts.find(username) == _accounts.end()){
-            throw std::runtime_error("Unkmown username");
+            throw DB::status::username_invalid;
         }
 
         if(_accounts[username] != password){
             std::cout << (int)_accounts[username][0] << std::endl;
             std::cout << password << "" << _accounts[username] << std::endl;
-            throw std::runtime_error("Wrong password");
+            throw DB::status::password_invalid;
         }
 
         if(_structure.size() != std::atoi(request + request_idx)){
-            throw std::runtime_error("Structures differ");
+            throw DB::status::structure_differ;
         }
         request_idx += strlen(request + request_idx) + 1;
 
@@ -174,11 +174,11 @@ namespace DB{
                 request_idx < 1024 && structure_idx < _structure.size();
                 ++structure_idx, ++request_idx){
             if(request[request_idx] != structure[structure_idx]){
-                throw std::runtime_error("Structures differ");
+                throw DB::status::structure_differ;
             }
         }
 
-        return request_idx;
+        return request_idx+1;
     }
 
     void DB::DataBaseServer::addRecord(const Entry &entry){

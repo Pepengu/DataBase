@@ -11,17 +11,17 @@ namespace DB
 {
     //Enum for more convinients fields logic
     enum FIELDS{
-        BYTE = 0,
-        SHORT = 1,
-        INT = 2,
-        LONG = 3,
-        UBYTE = 4,
-        USHORT = 5,
-        UINT = 6,
-        ULONG = 7,
-        BOOL = 8,
-        DOUBLE = 9,
-        STRING = 10,
+        BYTE,
+        SHORT,
+        INT,
+        LONG,
+        UBYTE,
+        USHORT,
+        UINT,
+        ULONG,
+        BOOL,
+        DOUBLE,
+        STRING
     };
 
     //Values that are used if field is created without specifying it's value

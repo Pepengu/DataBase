@@ -25,9 +25,12 @@ namespace DB{
         void _create_request();
     public:
         DataBaseClient(const char* configFile);
+        DataBaseClient(){}
+
+        void init(const char* configFile);
         
         ~DataBaseClient(){close(_client_fd);}
 
-        void send_command(const std::string &command);
+        std::string send_command(const std::string &command);
     };
 }
