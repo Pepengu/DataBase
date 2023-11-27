@@ -78,12 +78,12 @@ int main(int argc, char const* argv[]){
 			continue;
 		}
 		
-		DB::requestType request = DB::requestType(buffer[idx]);
+		DB::REQUEST_TYPE request = DB::REQUEST_TYPE(buffer[idx]);
 		char msg[1];
 		switch (request)
 		{
-		case DB::requestType::connection:
-			msg[0] = DB::status::connection_success;
+		case DB::REQUEST_TYPE::connection:
+			msg[0] = DB::STATUS::connection_success;
 			break; 
 		
 		default:

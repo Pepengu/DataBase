@@ -1,7 +1,5 @@
 #include "DataBase.h"
-#include <functional>
-#include <chrono>
-#include <ctime>  
+#include <functional> 
 #include <iostream>
 
 namespace DB{
@@ -21,7 +19,7 @@ namespace DB{
         std::vector<FIELDS> types(entry.size()); 
         for(size_t idx = 0; idx < entry.size(); ++idx){
             auto &ptr = *entry[idx].get();
-            types[idx] = _hash2Idx[typeid(ptr).hash_code()];
+            types[idx] = _hash2Type[typeid(ptr).hash_code()];
         }
         return types;
     }
@@ -107,13 +105,13 @@ namespace DB{
             std::string type = str.substr(str.find_first_of(':')+1, str.find_first_of(';')); 
             type = type.substr(type.find_first_not_of(' '));
 
-            if(_str2Idx.find(type) == _str2Idx.end()){
+            if(_str2Type.find(type) == _str2Type.end()){
                 throw line;
             }
 
             _idx2name.push_back(name);
             _name2idx[name] = _structure.size();
-            switch (_str2Idx[type]){
+            switch (_str2Type[type]){
             case BYTE:
                 _structure.push_back(createField(static_cast<int8_t>(DEFAULT_BYTE)));
                 break;
@@ -156,5 +154,171 @@ namespace DB{
             line++;
         }
         return line;
+    }
+
+    bool isNumber(std::string::const_iterator begin, std::string::const_iterator end){
+        while(begin != end && *begin > '0' && *begin < '9'){
+            ++begin;
+        }
+
+        return begin == end;
+    }
+
+    bool DataBase::_checkNamed(const std::string &entry){
+        auto shift = entry.cbegin();
+        for(size_t entry_size = 0; entry_size < _structure.size(); ++entry_size){
+            while(shift != entry.end() && *shift == ' '){
+                ++shift;
+            }
+            if(shift == entry.end()){
+                return false;
+            }
+
+            auto end = std::find(shift, entry.end(), ':');
+            if(end == entry.end()){
+                return false;
+            }
+
+            std::string name(shift, end);
+            if(_name2idx.find(name) == _name2idx.end()){
+                return false;
+            }
+            shift = end+1;
+            while(shift != entry.end() && *shift == ' '){
+                ++shift;
+            }
+            if(shift == entry.end()){
+                return false;
+            }
+
+            auto &ptr = *_structure[_name2idx[name]].get();
+            size_t hash = typeid(ptr).hash_code();
+            std::string cur;
+            switch (_hash2Type[hash]){
+            case DB::FIELDS::BYTE:
+            case DB::FIELDS::SHORT:
+            case DB::FIELDS::INT:
+            case DB::FIELDS::LONG:
+                if(*shift == '-'){
+                    ++shift;
+                }
+
+            case DB::FIELDS::UBYTE:
+            case DB::FIELDS::USHORT:
+            case DB::FIELDS::UINT:
+            case DB::FIELDS::ULONG:
+                end = std::find(shift, entry.end(), ' ');
+                
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                break;
+
+            case DB::FIELDS::BOOL:
+                end = std::find(shift, entry.end(), ' ');
+                cur = std::string(shift, end);
+                if(cur != "TRUE" && cur != "FALSE"){
+                    return false;
+                }
+                break;
+
+            case DB::FIELDS::DOUBLE:
+                end = std::find(shift, entry.end(), '.');
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                shift = end+1;
+                end = std::find(shift, entry.end(), ' ');
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                shift = end;
+                break;
+
+            case DB::FIELDS::STRING:
+                shift = std::find(shift, entry.end(), ' ');
+                break;
+            }
+            shift = end;
+        }
+
+        return shift == entry.end();
+    }
+
+    bool DataBase::_checkUnnamed(const std::string &entry){
+        auto shift = entry.cbegin();
+        for(size_t entry_size = 0; entry_size < _structure.size(); ++entry_size){
+            while(shift != entry.end() && *shift == ' '){
+                ++shift;
+            }
+            if(shift == entry.end()){
+                return false;
+            }
+
+            auto end = std::find(shift, entry.end(), ':');
+            if(end == entry.end()){
+                return false;
+            }
+
+            auto &ptr = *_structure[entry_size].get();
+            size_t hash = typeid(ptr).hash_code();
+            std::string cur;
+            switch (_hash2Type[hash]){
+            case DB::FIELDS::BYTE:
+            case DB::FIELDS::SHORT:
+            case DB::FIELDS::INT:
+            case DB::FIELDS::LONG:
+                if(*shift == '-'){
+                    ++shift;
+                }
+
+            case DB::FIELDS::UBYTE:
+            case DB::FIELDS::USHORT:
+            case DB::FIELDS::UINT:
+            case DB::FIELDS::ULONG:
+                end = std::find(shift, entry.end(), ' ');
+                
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                break;
+
+            case DB::FIELDS::BOOL:
+                end = std::find(shift, entry.end(), ',');
+                cur = std::string(shift, end);
+                if(cur != "TRUE" && cur != "FALSE"){
+                    return false;
+                }
+                break;
+
+            case DB::FIELDS::DOUBLE:
+                end = std::find(shift, entry.end(), '.');
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                shift = end+1;
+                end = std::find(shift, entry.end(), ',');
+                if(!isNumber(shift, end)){
+                    return false;
+                }
+                break;
+
+            case DB::FIELDS::STRING:
+                shift = std::find(shift, entry.end(), ',');
+                break;
+            }
+            shift = end+1;
+        }
+
+        return shift == entry.end();
+    }
+
+    bool DataBase::is_valid_entry(const std::string &entry){
+        if(entry.find(':') != std::string::npos){
+            return _checkNamed(entry);
+        }
+        else{
+            return _checkUnnamed(entry);
+        }
     }
 }

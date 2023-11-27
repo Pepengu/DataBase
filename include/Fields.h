@@ -140,7 +140,7 @@ namespace DB
     /**USE ONLY IF YOU ARE SURE ABOUT WHAT YOU ARE DOING
      * NOT NEEDED IF YOU ARE NOT IMPLEMENTING NEW FIELD TYPES
     */
-    static std::map<std::string, FIELDS> _str2Idx{
+    static std::map<std::string, FIELDS> _str2Type{
         {"byte", BYTE},
         {"short int", SHORT},
         {"int", INT},
@@ -157,7 +157,7 @@ namespace DB
     /**USE ONLY IF YOU ARE SURE ABOUT WHAT YOU ARE DOING
      * NOT NEEDED IF YOU ARE NOT IMPLEMENTING NEW FIELD TYPES
     */
-    static std::map<size_t, FIELDS> _hash2Idx{
+    static std::map<size_t, FIELDS> _hash2Type{
         {typeid(NumberField<int8_t>).hash_code(), BYTE},
         {typeid(NumberField<int16_t>).hash_code(), SHORT},
         {typeid(NumberField<int32_t>).hash_code(), INT},

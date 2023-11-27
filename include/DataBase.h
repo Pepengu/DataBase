@@ -15,12 +15,13 @@ namespace DB{
     std::vector<std::string> getValue(const Entry &entry);
     std::vector<FIELDS> getTypes(const Entry &entry);
 
-    enum requestType{
+    enum REQUEST_TYPE{
         connection,
         add,
         remove,
         edit,
         dump,
+        get,
         filter
     };
 
@@ -43,9 +44,15 @@ namespace DB{
         void _parseConfig(const char* configFile);
 
         size_t _processEntry(std::ifstream &cfg);
+
+        bool _checkNamed(const std::string &entry);
+        bool _checkUnnamed(const std::string &entry);
+    
+    public:
+        bool is_valid_entry(const std::string &entry);
     };
 
-    enum status : unsigned char{
+    enum STATUS : unsigned char{
         success = 0x00,
         connection_success,
 

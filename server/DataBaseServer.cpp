@@ -66,7 +66,7 @@ namespace DB{
 
         for(const auto &field : _structure){
             auto &ptr = *field.get();
-            if(file.get() != DB::_hash2Idx[typeid(ptr).hash_code()]){
+            if(file.get() != DB::_hash2Type[typeid(ptr).hash_code()]){
                 file.close();
                 throw std::invalid_argument("DataBase file has a different structure");
             }
@@ -78,7 +78,7 @@ namespace DB{
             for(int field = 0; field < _structure.size(); ++field){
                 char input[128];
                 auto &ptr = *_structure[field].get();
-                switch (DB::_hash2Idx[typeid(ptr).hash_code()]){
+                switch (DB::_hash2Type[typeid(ptr).hash_code()]){
                 case 0:
                     file.read(input, sizeof(int8_t));
                     new_Entry[field] = createField(*reinterpret_cast<int8_t*>(input));
@@ -156,17 +156,17 @@ namespace DB{
         request_idx += strlen(request + request_idx) + 1;
 
         if(_accounts.find(username) == _accounts.end()){
-            throw DB::status::username_invalid;
+            throw DB::STATUS::username_invalid;
         }
 
         if(_accounts[username] != password){
             std::cout << (int)_accounts[username][0] << std::endl;
             std::cout << password << "" << _accounts[username] << std::endl;
-            throw DB::status::password_invalid;
+            throw DB::STATUS::password_invalid;
         }
 
         if(_structure.size() != std::atoi(request + request_idx)){
-            throw DB::status::structure_differ;
+            throw DB::STATUS::structure_differ;
         }
         request_idx += strlen(request + request_idx) + 1;
 
@@ -174,7 +174,7 @@ namespace DB{
                 request_idx < 1024 && structure_idx < _structure.size();
                 ++structure_idx, ++request_idx){
             if(request[request_idx] != structure[structure_idx]){
-                throw DB::status::structure_differ;
+                throw DB::STATUS::structure_differ;
             }
         }
 
@@ -212,7 +212,7 @@ namespace DB{
         out << DB::signature;
         for(const auto &field : _structure){
             auto &ptr = *field.get();
-            out.put(DB::_hash2Idx[typeid(ptr).hash_code()]);
+            out.put(DB::_hash2Type[typeid(ptr).hash_code()]);
         }
 
         for(const auto &entry : _entries){

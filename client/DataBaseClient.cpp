@@ -87,17 +87,17 @@ namespace DB{
         
         std::string result;
         if(valread > 0){
-            DB::status status = DB::status(buffer[0]);
+            DB::STATUS status = DB::STATUS(buffer[0]);
             switch (status){
-                case DB::status::connection_success:
+                case DB::STATUS::connection_success:
                 default:
                     return result = ("Success");
 
-                case DB::status::username_invalid:
-                case DB::status::password_invalid:
+                case DB::STATUS::username_invalid:
+                case DB::STATUS::password_invalid:
                     result = std::string("Username or password is invalid");
 
-                case DB::status::structure_differ:
+                case DB::STATUS::structure_differ:
                     throw std::runtime_error("Structure differ");
                 
             }

@@ -6,11 +6,11 @@ void DB::Field::copyField(const std::unique_ptr<DB::Field> &from, std::unique_pt
         auto &ptr = *from.get();
         size_t hash = typeid(ptr).hash_code();
         
-        if(DB::_hash2Idx.find(hash) == DB::_hash2Idx.end()){
+        if(DB::_hash2Type.find(hash) == DB::_hash2Type.end()){
             throw std::invalid_argument("Unknown field type occured");
         }
 
-        switch (DB::_hash2Idx[hash]){
+        switch (DB::_hash2Type[hash]){
             case BYTE:
                 to = std::make_unique<DB::NumberField<int8_t>>(*dynamic_cast<const DB::NumberField<int8_t>*>(&ptr));
                 break;
