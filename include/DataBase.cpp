@@ -321,4 +321,8 @@ namespace DB{
             return _checkUnnamed(entry);
         }
     }
+
+    bool DataBase::is_valid_entry(const char *entry){
+        return is_valid_entry(std::string(entry));
+    }
 }

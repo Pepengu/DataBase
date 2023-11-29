@@ -48,6 +48,7 @@ namespace DB
         static void copyField(const std::unique_ptr<DB::Field> &from, std::unique_ptr<DB::Field> &to);
 
         virtual inline std::string getValue() const = 0;
+        virtual inline void setValue(const char* str) = 0;
     };
 
     /**Number field is used to store integer values
@@ -68,6 +69,14 @@ namespace DB
         NumberField(NumberField &&other) noexcept { swap(other); }
 
         inline std::string getValue() const{return std::to_string(value);}
+        inline void setValue(const char* str){
+            if(std::is_same<Integer, uint64_t>::value){
+                value = std::stoull(std::string(str));
+            }
+            else{
+                value = static_cast<Integer>(std::stoll(std::string(str)));
+            }
+        }
         inline void setValue(Integer val){value = val;}
     };
 
@@ -111,7 +120,7 @@ namespace DB
         BoolField(BoolField &&other) noexcept { swap(other); }
 
         inline std::string getValue() const{return value ? "TRUE" : "FALSE";}
-
+        inline void setValue(const char* str){value = str[0];}
         inline void setValue(bool val){value = val;}
     };
 
@@ -133,6 +142,7 @@ namespace DB
         DoubleField(DoubleField &&other) noexcept { swap(other); }
 
         inline std::string getValue() const{return std::to_string(value);}
+        inline void setValue(const char* str){value = atof(str);}
 
         inline void setValue(double val){value = val;}
     };

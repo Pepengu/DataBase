@@ -12,7 +12,7 @@ namespace DB{
     */
     const std::string signature("PepenguDB");
 
-    class DataBaseServer : DataBase{
+    class DataBaseServer : public DataBase{
     private:
         using entries_vector = std::vector<Entry>;
 
@@ -27,6 +27,13 @@ namespace DB{
         size_t _processFile(std::ifstream &cfg);
         size_t _processBackupFrequency(std::ifstream &cfg);
 
+        bool _filterEntry(char* entry);
+        Entry _createNamed(const char* str);
+        Entry _createUnnamed(const char* str);
+        void _addNamed(const char* str);
+        void _addUnamed(const char* str);
+        void _editNamed(size_t idx, const char* str);
+        void _editUnamed(size_t idx, const char* str);
     public:
 
         using iterator = entries_vector::iterator;
@@ -40,10 +47,18 @@ namespace DB{
         const_iterator cend() const { return _entries.cend(); }
 
         DataBaseServer(const char* configFile);
+        DataBaseServer(): _backup_count(100){};
+        ~DataBaseServer(){close();}
+        
+        void init(const char* configFile);
+        void close();
 
         size_t validateRequest(const char* request);
 
         void addRecord(const Entry &entry);
+        void addRecord(Entry &&entry);
+        void addRecord(char* entry);
+        void editRecord(char* entry);
         Entry &operator[](size_t idx);
         void remove(size_t idx);
         void save();

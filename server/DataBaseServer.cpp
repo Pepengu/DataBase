@@ -136,7 +136,80 @@ namespace DB{
         return 0;
     }
 
+
+    bool DataBaseServer::_filterEntry(char* entry){
+        bool is_named = false;
+        for(int i = 0; entry[i] != 0; ++i){
+            if(entry[i] == ':'){
+                is_named = true;
+                entry[i] = 0;
+            }
+        }
+        return is_named;
+    }
+
+    Entry DataBaseServer::_createNamed(const char* str){
+        DB::Entry entry(_structure.size());
+        for(size_t i = 0; i < _structure.size(); ++i){
+            DB::Field::copyField(_structure[i], entry[i]);
+        }
+
+        size_t idx = 0;
+        while(str[idx] != 0){
+            std::string name(str+idx);
+            for(;str[idx++]!=0;);
+
+            entry[_name2idx[name]]->setValue(str+(++idx));
+            for(;str[idx++]!=0;);
+            ++idx;            
+        }
+
+        return std::move(entry);
+    }
+
+    Entry DataBaseServer::_createUnnamed(const char* str){
+        DB::Entry entry(_structure.size());
+        for(size_t i = 0; i < _structure.size(); ++i){
+            if(*str == 0){
+                throw not_enough_fields;
+            }
+            DB::Field::copyField(_structure[i], entry[i]);
+            entry[i]->setValue(str);
+            for(;str[i]!=' ' && str[i]!=0;++i);
+        }
+        return std::move(entry);
+    }
+
+    void DataBaseServer::_addNamed(const char* str){
+        _entries.push_back(std::move(_createNamed(str)));
+    }
+
+    void DataBaseServer::_addUnamed(const char* str){
+
+        _entries.push_back(std::move(_createUnnamed(str)));
+    }
+
+    void DataBaseServer::_editNamed(size_t idx, const char* str){
+        size_t i = 0;
+        while(str[i] != 0){
+            std::string name(str+idx);
+            for(;str[i++]!=0;);
+
+            _entries[idx][_name2idx[name]]->setValue(str+(++idx));
+            for(;str[idx++]!=0;);
+            ++idx;            
+        }
+    }
+
+    void DataBaseServer::_editUnamed(size_t idx, const char* str){
+        _entries[idx] = std::move(_createUnnamed(str));
+    }
+
     DataBaseServer::DataBaseServer(const char* configFile): _backup_count(100){
+        init(configFile);
+    }
+
+    void DataBaseServer::init(const char* configFile){
         log.open("ServerLog.txt");
 
         _configMap["users"] = std::bind(&DataBaseServer::_processUsers, this, std::placeholders::_1);
@@ -146,6 +219,15 @@ namespace DB{
         _parseConfig(configFile);
 
         save();
+    }
+
+    void DataBaseServer::close(){
+        try{
+            save();
+        }
+        catch(...){
+            throw;
+        }
     }
 
     size_t DB::DataBaseServer::validateRequest(const char* request){
@@ -189,6 +271,46 @@ namespace DB{
         }
     }
 
+    void DB::DataBaseServer::addRecord(Entry &&entry){
+        _entries.resize(_entries.size()+1);
+        _entries.back() = std::move(entry);
+    }
+
+    void DB::DataBaseServer::addRecord(char* entry){
+        bool is_named = _filterEntry(entry);
+        try{
+            if(is_named){
+                _addNamed(entry);
+            }
+            else{
+                _addUnamed(entry);
+            }
+        }
+        catch(...){
+            throw;
+        }
+    }
+
+    void DB::DataBaseServer::editRecord(char* entry){
+        size_t idx = *reinterpret_cast<size_t*>(entry);
+        if(idx > _entries.size() || _entries[idx].size() == 0){
+            throw DB::STATUS::field_does_not_exist;
+        }
+        entry += sizeof(size_t);
+        bool is_named = _filterEntry(entry);
+        try{
+            if(is_named){
+                _editNamed(idx, entry);
+            }
+            else{
+                _editUnamed(idx, entry);
+            }
+        }
+        catch(...){
+            throw;
+        }
+    }
+
     inline Entry &DataBaseServer::operator[](size_t idx){
         if(idx >= _entries.size() || _entries[idx].size() == 0) {
             throw std::invalid_argument("Entry with id " + std::to_string(idx) + " does not exist");
@@ -200,7 +322,7 @@ namespace DB{
         if(idx > _entries.size() || _entries[idx].size() == 0) {
             return;
         }
-        _entries[idx].resize(0);
+        _entries[idx].clear();
     }
 
     void DataBaseServer::save(){
@@ -221,4 +343,5 @@ namespace DB{
             }
         }
     }   
+
 }

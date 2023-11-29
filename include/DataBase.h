@@ -22,7 +22,9 @@ namespace DB{
         edit,
         dump,
         get,
-        filter
+        filter,
+        stop,
+        save
     };
 
     /**Base class of a Data Base
@@ -50,11 +52,17 @@ namespace DB{
     
     public:
         bool is_valid_entry(const std::string &entry);
+        bool is_valid_entry(const char *entry);
     };
 
     enum STATUS : unsigned char{
         success = 0x00,
         connection_success,
+        save_success,
+        close_success,
+        addition_success,
+        removal_success,
+        edition_success,
 
         connention_error = 0x10,
         username_invalid,
@@ -62,10 +70,15 @@ namespace DB{
         structure_differ,
 
         addition_error = 0x20,
+        not_enough_fields,
 
         edit_error = 0x30,
+        field_does_not_exist,
 
         filter_error = 0x40,
+
+        save_error = 0x50,
+        save_file_inaccessible,
 
         causeMask = 0xF,
         typeMask  = 0xF0

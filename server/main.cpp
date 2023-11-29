@@ -9,7 +9,10 @@
 int main(int argc, char const* argv[]){
 	DB::DataBaseServer db("server/config.cfg");
 	
-	while(true){
+
+	size_t actions = 0;
+	bool not_ended = true;
+	while(not_ended){
 		int valread;
 		int opt = 1;
 		char buffer[1024] = { 0 };
@@ -66,7 +69,7 @@ int main(int argc, char const* argv[]){
 
 		valread = read(new_socket, buffer, 1024);
 
-		size_t idx;
+		size_t idx = 0;
 		try{
 			idx = db.validateRequest(buffer);
 		}
@@ -78,18 +81,61 @@ int main(int argc, char const* argv[]){
 			continue;
 		}
 		
-		DB::REQUEST_TYPE request = DB::REQUEST_TYPE(buffer[idx]);
-		char msg[1];
-		switch (request)
-		{
-		case DB::REQUEST_TYPE::connection:
-			msg[0] = DB::STATUS::connection_success;
-			break; 
-		
-		default:
-			break;
+		DB::REQUEST_TYPE request = DB::REQUEST_TYPE(buffer[idx++]);
+		char msg[1024]{};
+		try{
+			switch (request){
+			case DB::REQUEST_TYPE::connection:
+				msg[0] = DB::STATUS::connection_success;
+				break; 
+
+			case DB::REQUEST_TYPE::add:
+				if(db.is_valid_entry(buffer)){
+					throw DB::STATUS::structure_differ;
+				}
+				db.addRecord(buffer+idx);
+				msg[0] = DB::STATUS::addition_success;
+				break;
+			
+			case DB::REQUEST_TYPE::remove:
+				db.remove(*reinterpret_cast<size_t*>(buffer+idx));
+				msg[0] = DB::STATUS::removal_success;
+				break;
+			
+			case DB::REQUEST_TYPE::edit:
+				if(db.is_valid_entry(buffer)){
+					throw DB::STATUS::structure_differ;
+				}
+				db.editRecord(buffer+idx);
+				msg[0] = DB::STATUS::edition_success;
+				break;
+
+			case DB::REQUEST_TYPE::save:
+				db.save();
+				msg[0] = DB::STATUS::save_success;
+				break; 
+
+			case DB::REQUEST_TYPE::get:
+				db.save();
+				msg[0] = DB::STATUS::save_success;
+				break; 
+
+			case DB::REQUEST_TYPE::stop:
+				not_ended = false;
+				db.close();
+
+				msg[0] = DB::STATUS::close_success;
+				break;
+
+			
+			default:
+				break;
+			}
 		}
-		send(new_socket, msg, 1, 0);
+		catch(DB::STATUS error){
+			msg[0] = error;
+		}
+		send(new_socket, msg, 1024, 0);
 		// closing the connected socket
 		close(new_socket);
 		// closing the listening socket
