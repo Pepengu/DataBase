@@ -7,13 +7,22 @@
 
 
 int main(int argc, char const* argv[]){
-	DB::DataBaseServer db("server/config.cfg");
-	
+	if(argc < 2){
+		std::cout << "Config path is not provided";
+		return 0;
+	}
 
-	size_t actions = 0;
+	DB::DataBaseServer db;
+	try{
+		db.init(argv[1]);
+	}
+	catch(std::exception &msg){
+		std::cout << msg.what();
+		return 0;
+	}
+	
 	bool not_ended = true;
 	while(not_ended){
-		int valread;
 		int opt = 1;
 		char buffer[1024] = { 0 };
 		int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -67,21 +76,23 @@ int main(int argc, char const* argv[]){
 			exit(EXIT_FAILURE);
 		}
 
-		valread = read(new_socket, buffer, 1024);
+		read(new_socket, buffer, 1024);
 
 		size_t idx = 0;
 		try{
 			idx = db.validateRequest(buffer);
 		}
-		catch(std::exception &error){
-			send(new_socket, error.what(), strlen(error.what()), 0);
+		catch(DB::STATUS &error){
+			send(new_socket, reinterpret_cast<char*>(&error), 1, 0);
 			close(new_socket);
 			shutdown(server_fd, SHUT_RDWR);
 			close(server_fd);
 			continue;
 		}
-		
+
 		DB::REQUEST_TYPE request = DB::REQUEST_TYPE(buffer[idx++]);
+		db.log << "request with id " + std::to_string(request) + " recieved from user " + std::to_string(new_socket);
+		std::string result;
 		char msg[1024]{};
 		try{
 			switch (request){
@@ -90,7 +101,7 @@ int main(int argc, char const* argv[]){
 				break; 
 
 			case DB::REQUEST_TYPE::add:
-				if(db.is_valid_entry(buffer)){
+				if(!db.is_valid_entry(buffer+idx)){
 					throw DB::STATUS::structure_differ;
 				}
 				db.addRecord(buffer+idx);
@@ -98,14 +109,11 @@ int main(int argc, char const* argv[]){
 				break;
 			
 			case DB::REQUEST_TYPE::remove:
-				db.remove(*reinterpret_cast<size_t*>(buffer+idx));
+				db.remove(atoi(buffer+idx));
 				msg[0] = DB::STATUS::removal_success;
 				break;
 			
 			case DB::REQUEST_TYPE::edit:
-				if(db.is_valid_entry(buffer)){
-					throw DB::STATUS::structure_differ;
-				}
 				db.editRecord(buffer+idx);
 				msg[0] = DB::STATUS::edition_success;
 				break;
@@ -116,15 +124,21 @@ int main(int argc, char const* argv[]){
 				break; 
 
 			case DB::REQUEST_TYPE::get:
-				db.save();
-				msg[0] = DB::STATUS::save_success;
+				msg[0] = DB::STATUS::get_success;
+				result = db.get(atoi(buffer+idx));
+				memcpy(msg+1, result.c_str(), result.size()+1);
+				break; 
+			
+			case DB::REQUEST_TYPE::size:
+				msg[0] = DB::STATUS::size_success;
+				result = std::to_string(db.size());
+				memcpy(msg+1, result.c_str(), result.size()+1);
 				break; 
 
 			case DB::REQUEST_TYPE::stop:
 				not_ended = false;
 				db.close();
-
-				msg[0] = DB::STATUS::close_success;
+				msg[0] = DB::STATUS::stop_success;
 				break;
 
 			
@@ -136,6 +150,8 @@ int main(int argc, char const* argv[]){
 			msg[0] = error;
 		}
 		send(new_socket, msg, 1024, 0);
+
+		db.log << "Response " + std::to_string(msg[0]) + " was sent to user " + std::to_string(new_socket);
 		// closing the connected socket
 		close(new_socket);
 		// closing the listening socket

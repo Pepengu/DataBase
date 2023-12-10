@@ -59,6 +59,10 @@ filter field_name1_1: field_value_1, field_name_2: field_value_2, ... field_name
 ~~~
 - Shows all records with fields same as provided. If name is skipped it will be ignored.
 ~~~
+size
+~~~
+- Gives size of data base (including gaps)
+~~~
 save
 ~~~
 - Saves database

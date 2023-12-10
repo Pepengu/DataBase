@@ -7,7 +7,7 @@
 #include "DataBase.h"
 
 namespace DB{
-    class DataBaseClient : DataBase{
+    class DataBaseClient : public DataBase{
     private:
         std::string _request;
         char _addr[17];

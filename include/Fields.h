@@ -10,7 +10,7 @@
 namespace DB
 {
     //Enum for more convinients fields logic
-    enum FIELDS{
+    enum FIELDS : char{
         BYTE,
         SHORT,
         INT,
@@ -101,8 +101,17 @@ namespace DB
 
         inline std::string getValue() const{return value == nullptr ? std::string("") : std::string(value);}
 
-        inline void setValue(const std::string &val){strncpy(value = new char[val.size() + 1]{0}, val.c_str(), val.size());}
-        inline void setValue(const char *val){strncpy(value = new char[strlen(val)], val, strlen(val));}
+        inline void setValue(const std::string &val){
+            value = new char[val.size() + 1];
+            strncpy(value, val.c_str(), val.size());
+            value[val.size()] = 0;
+        }
+        inline void setValue(const char *val){
+            size_t length = strlen(val);
+            value = new char[length + 1];
+            strncpy(value, val, length+1);
+            value[length] = 0;
+        }
     };
 
     /**Bool field is used to store logical values (true or false) 

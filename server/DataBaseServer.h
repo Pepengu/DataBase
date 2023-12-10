@@ -27,9 +27,6 @@ namespace DB{
         size_t _processFile(std::ifstream &cfg);
         size_t _processBackupFrequency(std::ifstream &cfg);
 
-        bool _filterEntry(char* entry);
-        Entry _createNamed(const char* str);
-        Entry _createUnnamed(const char* str);
         void _addNamed(const char* str);
         void _addUnamed(const char* str);
         void _editNamed(size_t idx, const char* str);
@@ -59,8 +56,9 @@ namespace DB{
         void addRecord(Entry &&entry);
         void addRecord(char* entry);
         void editRecord(char* entry);
-        Entry &operator[](size_t idx);
+        std::string get(size_t idx);
         void remove(size_t idx);
+        inline size_t size(){return _entries.size();}
         void save();
     };
 }
