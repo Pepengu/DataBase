@@ -11,13 +11,13 @@ make client
 ## Client
 Open root directory in a console and type
 ~~~
-./Client
+./Client "path to config file"
 ~~~
 
 ## Server
 Open root directory in a console and type
 ~~~
-./Server
+./Server "path to config file"
 ~~~
 
 # Usage
