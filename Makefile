@@ -1,14 +1,13 @@
 CC=g++
-CFLAGS=-c -pedantic-errors -g -I ./include
-LDFLAGS=
+CFLAGS=-c -std=c++17 -pedantic-errors -g -I ./include
 
 SERVER_SOURCES=include/DataBase.cpp include/Fields.cpp server/DataBaseServer.cpp server/main.cpp
 SERVER_OBJECTS=$(SERVER_SOURCES:.cpp=.o)
-SERVER_EXECUTABLE=Server
+SERVER_EXECUTABLE=DataBase_Server
 
 CLIENT_SOURCES=include/DataBase.cpp include/Fields.cpp client/DataBaseClient.cpp client/main.cpp
 CLIENT_OBJECTS=$(CLIENT_SOURCES:.cpp=.o)
-CLIENT_EXECUTABLE=Client
+CLIENT_EXECUTABLE=DataBase_Client
 
 
 server: $(SERVER_SOURCES) $(SERVER_EXECUTABLE)

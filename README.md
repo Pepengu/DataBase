@@ -8,16 +8,20 @@ make client
 
 # Run
 
+Structure of Data Base needs to be provided in both client and server config.
+It is placed inside pf entry {}
+Example of config files is provided in server/config.cfg and client/config.cfg for server and cofing respectively.
+
 ## Client
 Open root directory in a console and type
 ~~~
-./Client "path to config file"
+./DataBase_Client "path to config file"
 ~~~
 
 ## Server
 Open root directory in a console and type
 ~~~
-./Server "path to config file"
+./DataBase_Server "path to config file"
 ~~~
 
 # Usage
